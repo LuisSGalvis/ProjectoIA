@@ -94,7 +94,9 @@ class politica_epica(Policy):
                     for c in range(3, 7):#otro diagonal
                         if (tab2[r, c] == yo and tab2[r+1, c-1] == yo and tab2[r+2, c-2] == yo and tab2[r+3, c-3] == yo):
                             return cols
-                #esto no fue mi mejor idea, si se les ocurre algo mejor porfa cambienlo
+            return None
+            
+        def checklose():    #esto no fue mi mejor idea, si se les ocurre algo mejor porfa cambienlo
             for cols in available_cols:
                 tab2 = s.copy()
                 h= get_heights(self, board=tab2)        
@@ -115,15 +117,19 @@ class politica_epica(Policy):
                         if (tab2[r, c] == enemigo and tab2[r+1, c-1] == enemigo and tab2[r+2, c-2] == enemigo and tab2[r+3, c-3] == enemigo):
                                 return cols
                 #Reitero, porfa si tienen una mejor idea cambienlo, esta horrible esto
-                return None
+            return None
         
         ver = int(1) #para cambiar entre el basico y el MCTS cuando lo tenga
+
         if(check_state() != None): #C: Cambie el if para no tener que redundar tanto, y dejé lo que habia antes
-            return check_state()
+            return check_state()      
+        if (checklose() != None):
+            return checklose()
         else:
             if ver==0:
                 return wheighted_rng()
             else:
+
                 #C: La idea es que hace un numero de trials, y luego elige la opción que mejor resultado dió, la cosa es que solo hace eso jaja
                 test_restults = trial(self, t=10)
                 if all(prob == 0 for prob in test_restults): #C: si no encotró una opcion mejor, elige una al azar
