@@ -1,20 +1,18 @@
 import numpy as np
 from connect4.policy import Policy
-from typing import List, override
+from typing import List
 
 # mejorar el contra aleatorio
 class politica_epica(Policy):
 
-    @override
     def mount(self) -> None:
         pass
 
     #C: cambié un poco la estructura, para no perderse
-    @override
     def act(self, s: np.ndarray) -> int:
         #==Variables==
-        yo=1 #no se como sacar si soy 1 o -1 asi que por ahora soy 1
-        enemigo = -yo
+        yo= -1 #no se como sacar si soy 1 o -1 asi que por ahora soy 1
+        enemigo = 1
         rng = np.random.default_rng()
 
         #==Funciones==
@@ -79,47 +77,46 @@ class politica_epica(Policy):
             for cols in available_cols:
                 tab2 = s.copy()
                 h= get_heights(self, board=tab2)        
-                tab2[5-h[cols],cols]=1
+                tab2[5-h[cols],cols]=yo
                 for row in range(6): #cambiar el row col
                     for col in range(4):#hor
-                        if (tab2[row, col] == 1 and tab2[row, col+1] == 1 and tab2[row, col+2] == 1 and tab2[row, col+3] == 1):
+                        if (tab2[row, col] == yo and tab2[row, col+1] == yo and tab2[row, col+2] == yo and tab2[row, col+3] == yo):
                                 return cols
                 for r in range(3):
                     for c in range(7):#ver
-                        if (tab2[r, c] == 1 and tab2[r+1, c] == 1 and tab2[r+2, c] == 1 and tab2[r+3, c] == 1):
+                        if (tab2[r, c] == yo and tab2[r+1, c] == yo and tab2[r+2, c] == yo and tab2[r+3, c] == yo):
                                 return cols
                 for r in range(3):
                     for c in range(4):#diagonal
-                        if (tab2[r, c] == 1 and tab2[r+1, c+1] == 1 and tab2[r+2, c+2] == 1 and tab2[r+3, c+3] == 1):
+                        if (tab2[r, c] == yo and tab2[r+1, c+1] == yo and tab2[r+2, c+2] == yo and tab2[r+3, c+3] == yo):
                                 return cols
                 for r in range(3):
                     for c in range(3, 7):#otro diagonal
-                        if (tab2[r, c] == 1 and tab2[r+1, c-1] == 1 and tab2[r+2, c-2] == 1 and tab2[r+3, c-3] == 1):
+                        if (tab2[r, c] == yo and tab2[r+1, c-1] == yo and tab2[r+2, c-2] == yo and tab2[r+3, c-3] == yo):
                             return cols
                 #esto no fue mi mejor idea, si se les ocurre algo mejor porfa cambienlo
             for cols in available_cols:
                 tab2 = s.copy()
                 h= get_heights(self, board=tab2)        
-                tab2[5-h[cols],cols]=-1
+                tab2[5-h[cols],cols]=enemigo
                 for row in range(6): #cambiar el row col
                     for col in range(4):#hor
-                        if (tab2[row, col] == -1 and tab2[row, col+1] == -1 and tab2[row, col+2] == -1 and tab2[row, col+3] == -1):
+                        if (tab2[row, col] == enemigo and tab2[row, col+1] == enemigo and tab2[row, col+2] == enemigo and tab2[row, col+3] == enemigo):
                                 return cols
                 for r in range(3):
                     for c in range(7):#ver
-                        if (tab2[r, c] == -1 and tab2[r+1, c] == -1 and tab2[r+2, c] == -1 and tab2[r+3, c] == -1):
+                        if (tab2[r, c] == enemigo and tab2[r+1, c] == enemigo and tab2[r+2, c] == enemigo and tab2[r+3, c] == enemigo):
                                 return cols
                 for r in range(3):
                     for c in range(4):#diagonal
-                        if (tab2[r, c] == -1 and tab2[r+1, c+1] == -1 and tab2[r+2, c+2] == -1 and tab2[r+3, c+3] == -1):                              return cols
+                        if (tab2[r, c] == enemigo and tab2[r+1, c+1] == enemigo and tab2[r+2, c+2] == enemigo and tab2[r+3, c+3] == enemigo):                              return cols
                 for r in range(3):
                     for c in range(3, 7):#otro diagonal
-                        if (tab2[r, c] == -1 and tab2[r+1, c-1] == -1 and tab2[r+2, c-2] == -1 and tab2[r+3, c-3] == -1):
+                        if (tab2[r, c] == enemigo and tab2[r+1, c-1] == enemigo and tab2[r+2, c-2] == enemigo and tab2[r+3, c-3] == enemigo):
                                 return cols
                 #Reitero, porfa si tienen una mejor idea cambienlo, esta horrible esto
                 return None
         
-        #==Ejecución==
         ver = int(1) #para cambiar entre el basico y el MCTS cuando lo tenga
         if(check_state() != None): #C: Cambie el if para no tener que redundar tanto, y dejé lo que habia antes
             return check_state()
