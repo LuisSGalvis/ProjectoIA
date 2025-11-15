@@ -1,15 +1,15 @@
 import numpy as np
 from connect4.policy import Policy
-from typing import List, override
+from typing import List
 
 # mejorar el contra aleatorio
 class politica_epica(Policy):
 
-    @override
+    
     def mount(self) -> None:
         pass
 
-    @override
+    
     def act(self, s: np.ndarray) -> int:
         yo=1 #no se como sacar si soy 1 o -1 asi que por ahora soy 1
         enemigo = -yo
@@ -82,6 +82,10 @@ class politica_epica(Policy):
                                 return cols
                 #Reitero, porfa si tienen una mejor idea cambienlo, esta horrible esto
             if(pv==False and pd==False):
+                if(get_heights(s)[2]<=5): #si no hay piezas colocadas coloca en espacio 3 para tener el medio
+                     return 2
+                elif(get_heights(s)[3]<=5):
+                     return 3
                 return rng.choice(available_cols)
 
             
