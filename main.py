@@ -10,8 +10,9 @@ players = list(participants.items())
 
 W=[]
 a=0
+t=5
 # Run the tournament
-for i in range(5):
+for i in range(t):
     champion = run_tournament(
         players,
         play,  # You could also create your own play function for testing purposes
@@ -23,4 +24,12 @@ for i in range(5):
         a+=1
 
 print("Champion:", W)
-print(a)
+progres = ""
+remanining = ""
+for i in range(round(a*10/t)):
+    progres+="█"
+if 10-round(a+10/t) > 0:
+    for i in range(11-round(a+10/t)):
+        remanining+="■"
+print(f"Ganó {a} veces")
+print(f"=== {round(a*100/t)}% ["+progres+remanining+"]===")
