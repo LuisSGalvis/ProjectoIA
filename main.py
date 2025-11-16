@@ -11,7 +11,7 @@ players = list(participants.items())
 W=[]
 a=0
 # Run the tournament
-for i in range(30):
+for i in range(5):
     champion = run_tournament(
         players,
         play,  # You could also create your own play function for testing purposes
