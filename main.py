@@ -4,10 +4,10 @@ from tournament import run_tournament, play
 
 # Read all files within subfolder of "groups"
 participants = find_importable_classes("groups", Policy)
-
+print(participants)
 # Build a participant list (name, class)
 players = list(participants.items())
-
+print("PLAYERS:", players)
 W=[]
 a=0
 t=5

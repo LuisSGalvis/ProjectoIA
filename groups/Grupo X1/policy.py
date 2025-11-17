@@ -22,30 +22,37 @@ class politica_epica(Policy):
         rng = np.random.default_rng()
 
         #==Funciones==
-        def wheighted_rng():
-            if(get_heights(self, board=s)[2]<=5): #si no hay piezas colocadas coloca en espacio 3 para tener el medio
-                    return 2
-            elif(get_heights(self, board=s)[3]<=5):
-                    return 3
-            return rng.choice(available_cols)
-        def get_heights(self, board: np.ndarray) -> List[int]:# lo saque de clase 1
+        def wheighted_rng(board):
+            legal = get_available_cols(board)
+            if not legal:
+                return None
+            for preferred in [2, 3]:
+                if preferred in legal:
+                    print(f"aleatorio preferido: {preferred}")
+                    return preferred
+            chosen = rng.choice(legal)
+            print(f"aleatorio: columna {chosen}")
+            return chosen
+        def get_heights(board: np.ndarray) -> List[int]:# lo saque de clase 1
             HeightList=[0,0,0,0,0,0,0]
             for col in range(7):
-                for row in reversed(range(6)):
+                for row in range(6):
                     if board[row,col] != 0:
                         HeightList[col] += 1
-                    else: break
+
             return HeightList
         # para vencer aleatorios tenemos que bloquear si van a ganar, una especie de subtrial
         # y ganar si estamos cerca, luego nos centramos en que aprenda de verdad
         def play(col: int, p: int, board: np.ndarray):
-            h = get_heights(self, board)
-            board[5-h[col],col] = p
+            row = get_heights(board)[col]
+            if row >= 6:
+                raise ValueError(f"Column {col} is full!")
+            board[5-row, col] = p
         #C: Y una función para determinar si ganamos
         def check_winner(board: np.ndarray, p: int) -> bool:
             for row in range(6):
                 for col in range(7):
-                    if col + 3 < 6 and all(board[row, col + i] == p for i in range(4)):#hor
+                    if col + 3 < 7 and all(board[row, col + i] == p for i in range(4)):#hor
                         return True
                     if row + 3 < 6 and all(board[row + i, col] == p for i in range(4)):# ver
                         return True
@@ -55,100 +62,142 @@ class politica_epica(Policy):
                         return True
             return False
         #C: Ahora la función que hace trials
-        def trial(self, t:int) -> List[int]:
+        def trial(t:int) -> List[int]:
             win_rate={0:0,1:0,2:0,3:0,4:0,5:0,6:0}
             for i in range(t):
                 test_s = s.copy()
-                available_cols = [c for c in range(7) if test_s[0, c] == 0]
-                for col in available_cols:
+                for col in  get_available_cols(test_s) :
                     #print("Columna: ",col)
-                    play(col, yo, test_s) #C: prueba jugar cada columna como primer movimiento
+                    temp_board= test_s.copy()
+                    play(col, yo, temp_board) #C: prueba jugar cada columna como primer movimiento
                     winner = None
                     tries = 0
-                    while 0 in test_s and winner == None and tries<8: #C: Aqui vuelve a el comportamiento que ya tenías
-                        if check_state(enemigo, yo) != None:
-                            play(check_state(enemigo, yo), enemigo, test_s)
-                        else:
-                            play(rng.choice(available_cols), enemigo, test_s)
-                        
-                        if check_state(yo, enemigo) != None:
-                            play(check_state(yo, enemigo), yo, test_s)
-                        else:
-                            play(wheighted_rng(), yo, test_s)
+                    while 0 in temp_board and winner is None and tries<8: #C: Aqui vuelve a el comportamiento que ya tenías
+                        legal= get_available_cols(temp_board)
+
+                        col_enemy = check_state(enemigo,yo, temp_board)
+                        if col_enemy is not None and col_enemy in legal:
+                            play(col_enemy,enemigo,temp_board)
+                        elif legal:
+                            play(rng.choice(legal),enemigo,temp_board)
+
+                        legal=get_available_cols(temp_board)
+                        col_me= check_state(yo, enemigo,temp_board)
+                        if col_me is not None and col_me in legal:
+                            play(col_me, yo, temp_board)
+                        elif legal:
+                            play(wheighted_rng(temp_board),yo, temp_board)
+
+
                         tries+=1
                         #print("Intento ",tries)
-                        if check_winner(test_s, yo): #C: aqui llevamos cuenta de si ganamos con esa decisión o no
+                        if check_winner(temp_board, yo): #C: aqui llevamos cuenta de si ganamos con esa decisión o no
                             winner = yo
                             win_rate[col]+=1
-                        elif check_winner(test_s, enemigo):
+                        elif check_winner(temp_board, enemigo):
                             winner = enemigo
                             win_rate[col]-=1
-            filtered_win_rate = {}
-            for col in available_cols:
-                filtered_win_rate[col] = win_rate[col]
+
+
+            filtered_win_rate = {c: win_rate[c] for c in range(7) if s[0, c] == 0}
             return filtered_win_rate
-        available_cols = [c for c in range(7) if s[0, c] == 0]
-        def check_state(p: int, e: int):
-            for cols in available_cols:
-                tab2 = s.copy()
-                h= get_heights(self, tab2)        
-                tab2[5-h[cols],cols]=p
-                for row in range(6): #cambiar el row col
-                    for col in range(4):#hor
-                        if (tab2[row, col] == p and tab2[row, col+1] == p and tab2[row, col+2] == p and tab2[row, col+3] == p):
-                            return cols
-                for r in range(3):
-                    for c in range(7):#ver
-                        if (tab2[r, c] == p and tab2[r+1, c] == p and tab2[r+2, c] == p and tab2[r+3, c] == p):
-                            return cols
-                for r in range(3):
-                    for c in range(4):#diagonal
-                        if (tab2[r, c] == p and tab2[r+1, c+1] == p and tab2[r+2, c+2] == p and tab2[r+3, c+3] == p):
-                            return cols
-                for r in range(3):
-                    for c in range(3, 7):#otro diagonal
-                        if (tab2[r, c] == p and tab2[r+1, c-1] == p and tab2[r+2, c-2] == p and tab2[r+3, c-3] == p):
-                            return cols
-                #esto no fue mi mejor idea, si se les ocurre algo mejor porfa cambienlo
-            for cols in available_cols:
-                tab2 = s.copy()
-                h= get_heights(self, tab2)        
-                tab2[5-h[cols],cols]=e
-                for row in range(6): #cambiar el row col
-                    for col in range(4):#hor
-                        if (tab2[row, col] == e and tab2[row, col+1] == e and tab2[row, col+2] == e and tab2[row, col+3] == enemigo):
-                                #print("check")
-                                return cols
-                for r in range(3):
-                    for c in range(7):#ver
-                        if (tab2[r, c] == e and tab2[r+1, c] == e and tab2[r+2, c] == e and tab2[r+3, c] == e):
-                                #print("check")
-                                return cols
-                for r in range(3):
-                    for c in range(4):#diagonal
-                        if (tab2[r, c] == e and tab2[r+1, c+1] == e and tab2[r+2, c+2] == e and tab2[r+3, c+3] == e):
-                            #print("check") 
-                            return cols
-                for r in range(3):
-                    for c in range(3, 7):#otro diagonal
-                        if (tab2[r, c] == e and tab2[r+1, c-1] == e and tab2[r+2, c-2] == e and tab2[r+3, c-3] == e):
-                                #print("check")
-                                return cols
-                #Reitero, porfa si tienen una mejor idea cambienlo, esta horrible esto
+        def get_available_cols(board):
+            return [c for c in range(7) if get_next_row(c, board) is not None]
+        def get_next_row(col,board):
+            heights = get_heights(board)
+            if heights[col] >= 6:
+                return None  # columna llena
+            return 5 - heights[col]
+
+        def check_state(p: int, e: int, board: np.ndarray):
+            def find3plus1(jugador,board):
+                #horizontal
+                for r in range(0,6):
+                    for c in range(0,4):
+                        secuencia= board[r,c:c+4]
+                        if list(secuencia).count(jugador) ==3 and list(secuencia).count(0)==1:
+                            hueco=list(secuencia).index(0)
+                            columna = c+hueco
+                            if columna in get_available_cols(board) and get_next_row(columna,board) == r :
+                                print("horizontal 3+1")
+                                return columna
+                #verticla
+                for c in range(0,7):
+                    for r in range(0,3):
+                        secuencia= [board[r+i,c]for i in range(4)]
+                        if secuencia.count(jugador) ==3 and secuencia.count(0)==1:
+                            hueco = secuencia.index(0)
+                            fila=r +hueco
+                            fila_real = get_next_row(c,board)
+
+                            if  fila_real is not None and fila_real == fila :
+                                print("vertical 3+1")
+                                return c
+                #diagonal derecha
+                for r in range(0,3):
+                    for c in range(0,4):
+                        secuencia= [board[r+i,c+i] for i in range(4)]
+                        if secuencia.count(jugador) == 3 and secuencia.count(0)==1:
+                            hueco = secuencia.index(0)
+                            columna = c +hueco
+                            fila= r + hueco
+                            if  columna in get_available_cols(board) and get_next_row(columna,board) == fila :
+                                print("diagonal d 3+1")
+                                return columna
+                #daigonal izquierda
+                for r in range(0,3):
+                    for c in range(3,7):
+                        secuencia=[board[r+i,c-i] for i in range(4)]
+                        if secuencia.count(jugador)==3 and secuencia.count(0)==1:
+                            hueco= secuencia.index(0)
+                            columna = c -hueco
+                            fila = r +hueco
+                            if columna in get_available_cols(board) and get_next_row(columna,board) == fila :
+                                print("diagonal 3+1")
+                                return columna
+                return None
+            #ganar
+            col = find3plus1(p,board)
+            legal = get_available_cols(board)
+            if col is not None and col in legal:
+                print("ganar")
+                return col
+            #bloquear
+            col = find3plus1(e,board)
+            if col is not None and col in legal:
+                print("bloquear")
+                return col
+            #random
+            legal = get_available_cols(board)
+            print(legal)
+            if legal:
+                chosen = wheighted_rng(board)
+                print(f"aleatorio: columna {chosen}")
+                return chosen
+            print("check status None")
             return None
+        #fincheck state
         print(s)
         ver = int(1) #para cambiar entre el basico y el MCTS cuando lo tenga
-        if check_state(yo, enemigo) != None: #C: Cambie el if para no tener que redundar tanto, y dejé lo que habia antes
-            print(check_state(yo, enemigo))
-            return check_state(yo, enemigo)
+        col= check_state(yo,enemigo,s)
+        print('check_state returned:', col)
+        legal = get_available_cols(s)
+        if col is not None and col in legal: #C: Cambie el if para no tener que redundar tanto, y dejé lo que habia antes
+            print("RETORNANDO -->", col, type(col))
+
+            return int(col)
+        elif legal:
+            alternativa= wheighted_rng(s)
+            print(f"alternativa: {alternativa}" , type(alternativa))
+            return int(alternativa)
         else:
             if ver==0:
-                return wheighted_rng()
+                return wheighted_rng(s)
             else:
                 #C: La idea es que hace un numero de trials, y luego elige la opción que mejor resultado dió, la cosa es que solo hace eso jaja
                 test_restults = trial(self, t=10)
                 if all(prob == 0 for prob in test_restults): #C: si no encotró una opcion mejor, elige una al azar
-                    return wheighted_rng()
+                    return wheighted_rng(s)
                 else:
                     print ("Test results: ",test_restults)
                     print ("Selected Action: ", list(test_restults.keys())[list(test_restults.values()).index(max(list(test_restults.values())))])
