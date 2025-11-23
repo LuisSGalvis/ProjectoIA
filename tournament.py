@@ -9,7 +9,7 @@ def next_power_of_two(n: int) -> int:
 
 
 def make_initial_matches(
-    players: list[Participant], shuffle: bool, seed: int
+        players: list[Participant], shuffle: bool, seed: int
 ) -> Versus:
     """Create the first round, padding with BYEs (None) up to a power of two."""
     players = players[:]  # copy
@@ -22,11 +22,11 @@ def make_initial_matches(
 
 
 def play_round(
-    versus: Versus,
-    play: Callable[[Participant, Participant, int, float, int], Participant],
-    best_of: int,
-    first_player_distribution: float,
-    seed: int,
+        versus: Versus,
+        play: Callable[[Participant, Participant, int, float, int], Participant],
+        best_of: int,
+        first_player_distribution: float,
+        seed: int,
 ) -> list[Participant]:
     """Run a round and return the list of winners (handles BYEs)."""
     winners: list[Participant] = []
@@ -48,11 +48,11 @@ def pair_next_round(winners: list[Participant]) -> Versus:
 
 
 def play(
-    a: Participant,
-    b: Participant,
-    best_of: int,
-    first_player_distribution: float,
-    seed: int = 911,
+        a: Participant,
+        b: Participant,
+        best_of: int,
+        first_player_distribution: float,
+        seed: int = 911,
 ) -> Participant:
     """Play a match between two participants and return the winner."""
     # Variables
@@ -73,19 +73,21 @@ def play(
         total_games += 1
         # Decide who goes first based on the distribution
         if rng.random() < first_player_distribution:
-            first, second = (a, a_policy()), (b, b_policy())
+            first_participant, second_participant = a, b
+            first_policy, second_policy = a_policy(), b_policy()
         else:
-            first, second = (b, b_policy()), (a, a_policy())
+            first_participant, second_participant = b, a
+            first_policy, second_policy = b_policy(), a_policy()
 
         # Mount agents
-        first[1].mount()
-        second[1].mount()
+        first_policy.mount()
+        second_policy.mount()
 
         state = ConnectState()
         game_history: Game = Game()
 
         while not state.is_final():
-            _, current_policy = first if state.player == -1 else second
+            current_policy = first_policy if state.player == -1 else second_policy
             action = current_policy.act(state.board)
             game_history.append((state.board.copy().tolist(), int(action)))
             state = state.transition(int(action))
@@ -93,10 +95,17 @@ def play(
         games.append(game_history)
 
         # Determine winner
-        if state.get_winner() == -1:
-            a_wins += 1
-        elif state.get_winner() == 1:
-            b_wins += 1
+        winner = state.get_winner()
+        if winner == -1:
+            if first_participant == a:
+                a_wins += 1
+            else:
+                b_wins += 1
+        elif winner == 1:
+            if second_participant == a:
+                a_wins += 1
+            else:
+                b_wins += 1
         else:
             draws += 1
 
@@ -126,12 +135,12 @@ def play(
 
 
 def run_tournament(
-    players: list[Participant],
-    play: Callable[[Participant, Participant], Participant],
-    best_of: int = 7,
-    first_player_distribution: float = 0.5,
-    shuffle: bool = True,
-    seed: int = 911,
+        players: list[Participant],
+        play: Callable[[Participant, Participant], Participant],
+        best_of: int = 7,
+        first_player_distribution: float = 0.5,
+        shuffle: bool = True,
+        seed: int = 911,
 ):
     """
     Run a tournament among the given players using the provided play function.
