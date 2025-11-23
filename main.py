@@ -10,17 +10,18 @@ players = list(participants.items())
 print("PLAYERS:", players)
 W=[]
 a=0
-t=5
+t=1
 # Run the tournament
 for i in range(t):
     champion = run_tournament(
         players,
-        play,  # You could also create your own play function for testing purposes
+        play,# You could also create your own play function for testing purposes
         shuffle=True,
+        best_of=100
     )
     w,x=champion
     W.append(w)
-    if(w == 'Grupo X1'):
+    if(w == 'GrupoX1'):
         a+=1
 
 print("Champion:", W)
